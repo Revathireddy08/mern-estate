@@ -22,7 +22,7 @@
 //   plugins: [react()],
 //   server: {
 //     proxy: {
-//       'http://https://mern-estate-backend-iz4a.onrender.com/api': {
+//      l/api': {
 //         target: 'http://localhost:3000',
 //         changeOrigin: true
 //       }

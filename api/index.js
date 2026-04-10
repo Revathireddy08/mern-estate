@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const app = express(); // ✅ MUST BE FIRST
+const app = express(); 
 
 const PORT = process.env.PORT || 5050;
 
@@ -32,7 +32,6 @@ const startServer = async () => {
 
 startServer();
 
-const __dirname = path.resolve();
 
 // middlewares
 app.use(express.json());
@@ -40,7 +39,7 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 app.use(cors({
-  origin: "https://mern-estate-backend-iz4a.onrender.com",
+  origin: "https://mern-estate-frontend-t217.onrender.com",
   credentials: true,
 }));
 
