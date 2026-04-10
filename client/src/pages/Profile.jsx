@@ -17,21 +17,25 @@ import {
   updateuserSuccess,
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 export default function Profile() {
   const fileRef = useRef(null);
   const dispatch = useDispatch();
   const { currentUser, loading, error } = useSelector((state) => state.user);
+
   const [file, setFile] = useState(undefined);
   const [filePerc, setFilePerc] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
+
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
+
   const [showListingsError, setShowListingsError] = useState(false);
   const [userListings, setUserListings] = useState([]);
+  const [showListingsClicked, setShowListingsClicked] = useState(false);
 
-  // console.log('ican', formData);
-
+  const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
   const handleFileUpload = (file) => {
@@ -56,7 +60,6 @@ export default function Profile() {
         }, 5000);
       },
       () => {
-        // Upload completed successfully, handle any additional logic here
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
           setFormData({ ...formData, avatar: downloadURL });
           setFileUploadError(false);
@@ -81,8 +84,15 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const confirmUpdate = window.confirm(
+      "Are you sure you want to update your profile?"
+    );
+    if (!confirmUpdate) return;
+
     try {
       dispatch(updateUserStart());
+
       const res = await fetch(`/api/user/update/${currentUser._id}`, {
         method: "POST",
         headers: {
@@ -90,7 +100,9 @@ export default function Profile() {
         },
         body: JSON.stringify(formData),
       });
+
       const data = await res.json();
+
       if (data.success === false) {
         dispatch(updateUserFailure(data.message));
         return;
@@ -103,74 +115,61 @@ export default function Profile() {
     }
   };
 
-  // Handle Delete User
-  // const handleDeleteUser = async () => {
-  //   try {
-  //     dispatch(deleteUserStart());
-  //     const res = await fetch(`/api/user/delete/${currentUser._id}`, {
-  //       method: "DELETE",
-  //     });
-
-  //     const data = await res.json();
-  //     if (data.success === false) {
-  //       dispatch(deleteUserFailure(data.message));
-  //       return;
-  //     }
-
-  //     dispatch(deleteUserSuccess(data));
-  //   } catch (error) {
-  //     dispatch(deleteUserFailure(error.message));
-  //   }
-  // };
-
   const handleDeleteUser = async () => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete your account?"
+    );
+    if (!confirmDelete) return;
+
     try {
       dispatch(deleteUserStart());
+
       const res = await fetch(`/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
+        credentials: "include",
       });
-  
+
       const data = await res.json();
+
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
-  
+
       dispatch(deleteUserSuccess(data));
       setSuccessMessage("User has been deleted successfully!");
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 5000);
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
     }
   };
-  
 
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
+
       const res = await fetch("/api/auth/signout");
       const data = await res.json();
-      // Handle success or error response as needed
+
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
+
       dispatch(deleteUserSuccess(data));
     } catch (error) {
-      // Handle fetch error
       dispatch(deleteUserFailure(error.message));
     }
   };
 
-  // HANDLE SHOW LISTINGS
-
   const handleShowListings = async () => {
+    setShowListingsClicked(true);
+
     try {
       setShowListingsError(false);
+
       const res = await fetch(`/api/user/listings/${currentUser._id}`);
       const data = await res.json();
+
       if (data.success === false) {
         setShowListingsError(true);
         return;
@@ -182,41 +181,28 @@ export default function Profile() {
     }
   };
 
-  // HANDLE DELETE LISTING
-
-  // const handleListingDelete = async (listingId) => {
-  //   try {
-  //     const res = await fetch(`/api/listing/delete/${listingId}`, {
-  //       method: "DELETE",
-  //     });
-  //     const data = await res.json();
-  //     if (data.success === false) {
-  //       console.log(data.message);
-  //       return;
-  //     }
-
-  //     setUserListings((prev) =>
-  //       prev.filter((listing) => listing._id !== listingId)
-  //     );
-  //   } catch (error) {
-  //     console.log(error.message);
-  //   }
-  // };
-
   const handleListingDelete = async (listingId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this listing?"
+    );
+    if (!confirmDelete) return;
+
     try {
       const res = await fetch(`/api/listing/delete/${listingId}`, {
         method: "DELETE",
       });
+
       const data = await res.json();
+
       if (data.success === false) {
         console.log(data.message);
         return;
       }
-  
+
       setUserListings((prev) =>
         prev.filter((listing) => listing._id !== listingId)
       );
+
       setSuccessMessage("Listing deleted successfully!");
       setTimeout(() => {
         setSuccessMessage("");
@@ -225,7 +211,6 @@ export default function Profile() {
       console.log(error.message);
     }
   };
-  
 
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -250,7 +235,6 @@ export default function Profile() {
         <p className="text-sm self-center">
           {fileUploadError ? (
             <span className="text-red-700">
-              {" "}
               Image Upload Error (Must be less than 2MB)
             </span>
           ) : filePerc > 0 && filePerc < 100 ? (
@@ -267,9 +251,10 @@ export default function Profile() {
           placeholder="username"
           className="border p-3 rounded-lg"
           id="username"
-          defaultValue={currentUser.username}
+          defaultValue={currentUser.username || currentUser.name}
           onChange={handleChange}
         />
+
         <input
           type="email"
           placeholder="email"
@@ -278,14 +263,23 @@ export default function Profile() {
           defaultValue={currentUser.email}
           onChange={handleChange}
         />
-        <input
-          type="password"
-          placeholder="password"
-          className="border p-3 rounded-lg"
-          id="password"
-          defaultValue={currentUser.password}
-          onChange={handleChange}
-        />
+
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="password"
+            className="border p-3 rounded-lg w-full"
+            id="password"
+            onChange={handleChange}
+          />
+
+          <span
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-3 cursor-pointer text-gray-500"
+          >
+            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+          </span>
+        </div>
 
         <button
           disabled={loading}
@@ -309,31 +303,40 @@ export default function Profile() {
         >
           Delete Account
         </span>
-        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
+
+        <span
+          onClick={handleSignOut}
+          className="text-red-700 cursor-pointer"
+        >
           Sign Out
         </span>
-
       </div>
 
       <p className="text-red-700 mt-5">{error ? error : ""}</p>
+
       <p className="text-green-700">
         {updateSuccess ? "User is successfully updated!" : ""}
       </p>
+
       <p className="text-green-700">{successMessage}</p>
 
       <button className="text-green-700 w-full" onClick={handleShowListings}>
         Show Listings
       </button>
+
       <p className="text-red-700 mt-5">
         {showListingsError ? "Error showing listings" : ""}
       </p>
 
-      {userListings && (
+      {showListingsClicked && (
         <div className="flex flex-col gap-4">
           <h1 className="text-center mt-7 text-2xl font-semibold">
             Your Listings
           </h1>
-          {userListings.length > 0 &&
+
+          {userListings.length === 0 ? (
+            <p className="text-center text-gray-500">No listings found</p>
+          ) : (
             userListings.map((listing) => (
               <div
                 key={listing._id}
@@ -346,8 +349,9 @@ export default function Profile() {
                     className="h-16 w-16 object-contain"
                   />
                 </Link>
+
                 <Link to={`/listing/${listing._id}`}>
-                  <p className="">{listing.name}</p>
+                  <p>{listing.name}</p>
                 </Link>
 
                 <div className="flex flex-col items-center">
@@ -357,13 +361,14 @@ export default function Profile() {
                   >
                     Delete
                   </button>
+
                   <Link to={`/update-listing/${listing._id}`}>
                     <button className="text-green-700 uppercase">Edit</button>
                   </Link>
                 </div>
               </div>
-            ))}
-            <p className="text-green-700">{successMessage}</p>
+            ))
+          )}
         </div>
       )}
     </div>

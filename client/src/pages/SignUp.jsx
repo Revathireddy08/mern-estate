@@ -20,6 +20,7 @@ export default function SignUp() {
   const handleSubmit = async (e) => {
     try {
       e.preventDefault();
+      console.log(formData);
       setLoading(true);
       const res = await fetch("/api/auth/signup", {
         method: "POST",
@@ -29,8 +30,14 @@ export default function SignUp() {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
-      if (data.success === false) {
+let data;
+try {
+  data = await res.json();
+} catch (err) {
+  setError("Invalid user credentials");
+  setLoading(false);
+  return;
+}      if (!res.ok || data.success === false) {
         setLoading(false);
         setError(data.message);
         return;
