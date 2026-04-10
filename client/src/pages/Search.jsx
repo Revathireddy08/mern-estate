@@ -54,8 +54,9 @@ export default function Search() {
       setLoading(true);
       setShowMore(false);
       const searchQuery = urlParams.toString();
-      const res = await fetch(`/api/listing/get?${searchQuery}`);
-      const data = await res.json();
+const res = await fetch(
+  `https://mern-estate-backend-iz4a.onrender.com/api/listing/get?${searchQuery}`
+);      const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         setListings(data);
         if (data.length > 8) {

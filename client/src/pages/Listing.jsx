@@ -17,6 +17,7 @@ import "swiper/css/bundle";
 import { useSelector } from "react-redux";
 import Contact from "../components/Contact";
 
+
 export default function Listing() {
   const params = useParams();
   const [listing, setListing] = useState(null);
@@ -32,7 +33,7 @@ export default function Listing() {
     const fetchListing = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/listing/get/${params.listingId}`);
+        const res = await fetch("https://mern-estate-backend-iz4a.onrender.com/api/listing/get/${params.listingId}");
         const data = await res.json();
         if (data.success === false) {
           setError(true);

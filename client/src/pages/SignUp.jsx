@@ -22,13 +22,14 @@ export default function SignUp() {
       e.preventDefault();
       console.log(formData);
       setLoading(true);
-      const res = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+  "https://mern-estate-backend-iz4a.onrender.com/api/auth/signup",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(formData),
+  }
+);
 
 let data;
 try {

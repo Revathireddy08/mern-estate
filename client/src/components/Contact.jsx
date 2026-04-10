@@ -10,18 +10,24 @@ export default function Contact({ listing }) {
   };
 
   useEffect(() => {
-    const fetchLandlord = async () => {
-      try {
-const res = await fetch(`http://https://mern-estate-backend-iz4a.onrender.com/api/user/${listing.userRef}`, {
-  credentials: "include",
-});        const data = await res.json();
-        setLandlord(data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchLandlord();
-  }, [listing.userRef]);
+  const fetchLandlord = async () => {
+    try {
+      const res = await fetch(
+        `https://mern-estate-backend-iz4a.onrender.com/api/user/${listing.userRef}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+      setLandlord(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  fetchLandlord();
+}, [listing.userRef]);
 
   const mailLink = landlord
     ? `mailto:${landlord.email}?subject=${encodeURIComponent(
@@ -36,8 +42,7 @@ const res = await fetch(`http://https://mern-estate-backend-iz4a.onrender.com/ap
           <p>
             Contact{' '}
             <span className="font-semibold">
-              {landlord.username || landlord.name}
-            </span>{' '}
+{landlord.username}            </span>{' '}
             for{' '}
             <span className="font-semibold">
               {listing.name.toLowerCase()}

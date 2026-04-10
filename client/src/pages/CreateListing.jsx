@@ -581,10 +581,16 @@ export default function CreateListing() {
       });
 
       // Make the API request
-      const response = await axios.post("/api/listing/create", {
-        ...formData,
-        userRef: currentUser._id,
-      });
+      const response = axios.post(
+  "https://mern-estate-backend-iz4a.onrender.com/api/listing/create",
+  {
+    ...formData,
+    userRef: currentUser._id,
+  },
+  {
+    withCredentials: true
+  }
+);
 
       console.log("Create listing response:", response.data);
       

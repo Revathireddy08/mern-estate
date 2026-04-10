@@ -38,7 +38,7 @@ export default function UpdateListing() {
   useEffect(() => {
     const fetchListing = async () => {
       const listingId  = params.listingId;
-      const res = await fetch(`/api/listing/get/${listingId}`);
+      const res = await fetch(`https://mern-estate-backend-iz4a.onrender.com/api/listing/update/${id}`);
       const data = await res.json();
       if(data.success === false){
         console.log(data.message);

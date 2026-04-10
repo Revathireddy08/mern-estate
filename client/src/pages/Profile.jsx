@@ -18,7 +18,7 @@ import {
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-
+import API from "../api"; 
 export default function Profile() {
   const fileRef = useRef(null);
   const dispatch = useDispatch();
@@ -93,16 +93,13 @@ export default function Profile() {
     try {
       dispatch(updateUserStart());
 
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await API.post(
+  `/api/user/update/${currentUser._id}`,
+  formData,
+  { withCredentials: true }
+);
 
-      const data = await res.json();
-
+const data = res.data;
       if (data.success === false) {
         dispatch(updateUserFailure(data.message));
         return;
@@ -124,12 +121,12 @@ export default function Profile() {
     try {
       dispatch(deleteUserStart());
 
-      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+     const res = await API.delete(
+  `/api/user/delete/${currentUser._id}`,
+  { withCredentials: true }
+);
 
-      const data = await res.json();
+const data = res.data;
 
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
@@ -147,8 +144,11 @@ export default function Profile() {
     try {
       dispatch(signOutUserStart());
 
-      const res = await fetch("/api/auth/signout");
-      const data = await res.json();
+      const res = await API.get("/api/auth/signout", {
+  withCredentials: true,
+});
+
+const data = res.data;
 
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
@@ -167,8 +167,9 @@ export default function Profile() {
     try {
       setShowListingsError(false);
 
-      const res = await fetch(`/api/user/listings/${currentUser._id}`);
-      const data = await res.json();
+      const res = await API.get(`/api/user/listings/${currentUser._id}`);
+
+const data = res.data;
 
       if (data.success === false) {
         setShowListingsError(true);
@@ -188,11 +189,11 @@ export default function Profile() {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`/api/listing/delete/${listingId}`, {
-        method: "DELETE",
-      });
+      const res = await API.delete(
+  `/api/listing/delete/${listingId}`
+);
 
-      const data = await res.json();
+const data = res.data;
 
       if (data.success === false) {
         console.log(data.message);

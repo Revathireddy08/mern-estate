@@ -2,7 +2,7 @@ import { FaSearch } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
-
+import { useLocation } from "react-router-dom";
 
 export default function Header() {
   const currentUser = useSelector((state) => state.user.currentUser);
@@ -16,13 +16,15 @@ export default function Header() {
     navigate(`/search?${searchQuery}`)
   }
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(location.search)
-    const searchTermFromUrl = urlParams.get('searchTerm');
-    if (searchTermFromUrl) {
-      setSearchTerm(searchTermFromUrl)
-    }
-  }, [location.search])
+  const location = useLocation();
+
+useEffect(() => {
+  const urlParams = new URLSearchParams(location.search);
+  const searchTermFromUrl = urlParams.get("searchTerm");
+  if (searchTermFromUrl) {
+    setSearchTerm(searchTermFromUrl);
+  }
+}, [location.search]);
 
   return (
     <header className="bg-slate-200 shadow-md">
@@ -60,8 +62,9 @@ export default function Header() {
           <Link to={"/profile"}>
             {currentUser ? (
               <img
-                src={currentUser.avatar || "default-avatar.png"}
-                className="h-7 w-7 rounded-full object-cover"
+onError={(e) => {
+  e.target.src = "default-avatar.png";
+}}                className="h-7 w-7 rounded-full object-cover"
               />
             ) : (
               <li className="sm:inline text-slate-700 hover:underline">
