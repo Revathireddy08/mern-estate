@@ -87,41 +87,35 @@ export const google = async (req, res, next) => {
     const secretKey = process.env.JWT_SECRET || "fallback_secret_key";
 
     if (!user) {
-      // Create new user if not exists
       const generatePassword =
         Math.random().toString(36).slice(-8) +
         Math.random().toString(36).slice(-8);
 
       const hashedPassword = bcryptjs.hashSync(generatePassword, 10);
 
+      // ✅ FIX HERE (important)
+      const username =
+  (name || "user")
+    .replace(/\s/g, "")
+    .toLowerCase() +
+  Math.random().toString(36).slice(2, 6);
       user = new User({
-        username: name,
-        email: email,
+        username,   // ✅ now unique
+        email,
         password: hashedPassword,
         avatar: photo,
       });
 
       await user.save();
-    } else {
-      // Update only if name or avatar changed
-      if (user.username !== name || user.avatar !== photo) {
-        user.username = name;
-        user.avatar = photo;
-        await user.save();
-      }
     }
 
-    // Create JWT token
     const token = jwt.sign({ id: user._id }, secretKey);
-
-    const { password: pass, ...rest } = user._doc;
 
     res
       .cookie("access_token", token, {
         httpOnly: true,
         secure: true,
         sameSite: "none",
-        maxAge: 24 * 60 * 60 * 1000,
         path: "/",
       })
       .status(200)
@@ -131,6 +125,7 @@ export const google = async (req, res, next) => {
         email: user.email,
         avatar: user.avatar,
       });
+
   } catch (error) {
     console.error("Google auth error:", error);
     next(errorHandler(500, "Google authentication failed"));

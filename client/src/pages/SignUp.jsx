@@ -28,17 +28,18 @@ export default function SignUp() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(formData),
+     credentials: "include", 
   }
 );
 
-let data;
+let data = {};
 try {
   data = await res.json();
 } catch (err) {
-  setError("Invalid user credentials");
+  setError("Server error. Try again.");
   setLoading(false);
   return;
-}      if (!res.ok || data.success === false) {
+}    if (!res.ok || data.success === false) {
         setLoading(false);
         setError(data.message);
         return;

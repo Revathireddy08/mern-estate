@@ -31,11 +31,18 @@ const [showPassword, setShowPassword] = useState(false);
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(formData),
+    credentials: "include",   // ✅ ADD THIS
   }
 );
 
-      const data = await res.json();
-      if (data.success === false) {
+let data;
+
+try {
+  data = await res.json();
+} catch (err) {
+  dispatch(signInFailure("Server error"));
+  return;
+}      if (data.success === false) {
         dispactch(signInFailure(data.message))
         return;
       }
