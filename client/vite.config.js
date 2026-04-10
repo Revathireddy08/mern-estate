@@ -5,7 +5,7 @@
 // // export default defineConfig({
 // //   server: {
 // //     proxy: {
-// //       'http://localhost:5000/api': {
+// //       'http://https://mern-estate-backend-iz4a.onrender.com/api': {
 // //         target: 'http://localhost:3000',
 // //         source: false
 // //       }
@@ -22,7 +22,7 @@
 //   plugins: [react()],
 //   server: {
 //     proxy: {
-//       'http://localhost:5000/api': {
+//       'http://https://mern-estate-backend-iz4a.onrender.com/api': {
 //         target: 'http://localhost:3000',
 //         changeOrigin: true
 //       }
@@ -38,7 +38,7 @@
 // export default defineConfig({
 //   server: {
 //     proxy: {
-//       'http://localhost:5000/api': {
+//       'http://https://mern-estate-backend-iz4a.onrender.com/api': {
 //         target: 'http://localhost:3000',
 //         source: false
 //       }
@@ -56,7 +56,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:5000",
+        target: "http://https://mern-estate-backend-iz4a.onrender.com",
         changeOrigin: true,
         secure: false,
       }

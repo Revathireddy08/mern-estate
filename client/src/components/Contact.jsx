@@ -12,7 +12,7 @@ export default function Contact({ listing }) {
   useEffect(() => {
     const fetchLandlord = async () => {
       try {
-const res = await fetch(`http://localhost:5000/api/user/${listing.userRef}`, {
+const res = await fetch(`http://https://mern-estate-backend-iz4a.onrender.com/api/user/${listing.userRef}`, {
   credentials: "include",
 });        const data = await res.json();
         setLandlord(data);
