@@ -1,43 +1,74 @@
-import { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  signOutUserStart,
-  signOutUserSuccess,
-  signOutUserFailure,
-  updateUserStart,
-  updateUserSuccess,
-  updateUserFailure,
-  deleteUserSuccess,
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
+} from "firebase/storage";
+import { app } from "../firebase";
+import {
   deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  signOutUserStart,
+  signOutUserSuccess, // ✅ FIX
+  updateUserFailure,
+  updateUserStart,
+  updateUserSuccess, // ✅ FIX (name corrected)
 } from "../redux/user/userSlice";
+import { Link } from "react-router-dom";
 
 export default function Profile() {
-  const { currentUser } = useSelector((state) => state.user);
+  const fileRef = useRef(null);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const { currentUser, loading, error } = useSelector((state) => state.user);
 
+  const [file, setFile] = useState(undefined);
+  const [filePerc, setFilePerc] = useState(0);
+  const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
-  const [error, setError] = useState(false);
+  const [userListings, setUserListings] = useState([]);
+  const [showListingsError, setShowListingsError] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  useEffect(() => {
-    if (currentUser) {
-      setFormData({
-        username: currentUser.username,
-        email: currentUser.email,
-        avatar: currentUser.avatar,
-      });
-    }
-  }, [currentUser]);
+  // ---------------- IMAGE UPLOAD ----------------
+  const handleFileUpload = (file) => {
+    const storage = getStorage(app);
+    const fileName = new Date().getTime() + file.name;
+    const storageRef = ref(storage, fileName);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.id]: e.target.value,
-    });
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setFilePerc(progress);
+      },
+      () => {
+        setFileUploadError(true);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setFormData((prev) => ({ ...prev, avatar: downloadURL }));
+        });
+      }
+    );
   };
 
+  useEffect(() => {
+    if (file) handleFileUpload(file);
+  }, [file]);
+
+  // ---------------- HANDLE CHANGE ----------------
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  // ---------------- UPDATE USER ----------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -47,30 +78,32 @@ export default function Profile() {
       const res = await fetch(
         `https://mern-estate-backend-iz4a.onrender.com/api/user/update/${currentUser._id}`,
         {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          credentials: "include", // 🔥 IMPORTANT
           body: JSON.stringify(formData),
         }
       );
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (data.success === false) {
         dispatch(updateUserFailure(data.message));
         return;
       }
 
       dispatch(updateUserSuccess(data));
-      localStorage.setItem("user", JSON.stringify(data));
       setUpdateSuccess(true);
     } catch (error) {
       dispatch(updateUserFailure(error.message));
     }
   };
 
-  const handleDelete = async () => {
+  // ---------------- DELETE USER ----------------
+  const handleDeleteUser = async () => {
     try {
+      dispatch(deleteUserStart());
+
       const res = await fetch(
         `https://mern-estate-backend-iz4a.onrender.com/api/user/delete/${currentUser._id}`,
         {
@@ -81,19 +114,18 @@ export default function Profile() {
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
 
       dispatch(deleteUserSuccess());
-      localStorage.removeItem("user");
-      navigate("/sign-in");
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
     }
   };
 
+  // ---------------- SIGN OUT ----------------
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
@@ -105,11 +137,57 @@ export default function Profile() {
         }
       );
 
-      dispatch(signOutUserSuccess());
-      localStorage.removeItem("user");
-      navigate("/sign-in");
+      dispatch(signOutUserSuccess()); // ✅ FIX
     } catch (error) {
-      dispatch(signOutUserFailure(error.message));
+      dispatch(deleteUserFailure(error.message));
+    }
+  };
+
+  // ---------------- SHOW LISTINGS ----------------
+  const handleShowListings = async () => {
+    try {
+      setShowListingsError(false);
+
+      const res = await fetch(
+        `https://mern-estate-backend-iz4a.onrender.com/api/user/listings/${currentUser._id}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success === false) {
+        setShowListingsError(true);
+        return;
+      }
+
+      setUserListings(data);
+    } catch (error) {
+      setShowListingsError(true);
+    }
+  };
+
+  // ---------------- DELETE LISTING ----------------
+  const handleListingDelete = async (listingId) => {
+    try {
+      const res = await fetch(
+        `https://mern-estate-backend-iz4a.onrender.com/api/listing/delete/${listingId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.success === false) return;
+
+      setUserListings((prev) =>
+        prev.filter((listing) => listing._id !== listingId)
+      );
+    } catch (error) {
+      console.log(error.message);
     }
   };
 
@@ -119,54 +197,80 @@ export default function Profile() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
+          onChange={(e) => setFile(e.target.files[0])}
+          type="file"
+          ref={fileRef}
+          hidden
+          accept="image/*"
+        />
+
+        <img
+          onClick={() => fileRef.current.click()}
+          src={formData.avatar || currentUser?.avatar}
+          alt="profile"
+          className="rounded-full h-24 w-24 object-cover cursor-pointer self-center"
+        />
+
+        <input
           type="text"
           id="username"
-          className="border p-3 rounded-lg"
-          value={formData.username || ""}
+          defaultValue={currentUser?.username}
           onChange={handleChange}
+          className="border p-3 rounded-lg"
         />
 
         <input
           type="email"
           id="email"
-          className="border p-3 rounded-lg"
-          value={formData.email || ""}
+          defaultValue={currentUser?.email}
           onChange={handleChange}
+          className="border p-3 rounded-lg"
         />
 
-        <input
-          type="text"
-          id="avatar"
-          className="border p-3 rounded-lg"
-          value={formData.avatar || ""}
-          onChange={handleChange}
-        />
-
-        <button
-          type="submit"
-          className="bg-slate-700 text-white p-3 rounded-lg uppercase"
-        >
-          Update Profile
+        <button className="bg-slate-700 text-white p-3 rounded-lg">
+          {loading ? "Loading..." : "Update"}
         </button>
+
+        <Link
+          to="/create-listing"
+          className="bg-green-700 text-white p-3 rounded-lg text-center"
+        >
+          Create Listing
+        </Link>
       </form>
 
       <div className="flex justify-between mt-5">
-        <span onClick={handleDelete} className="text-red-700 cursor-pointer">
-          Delete account
+        <span onClick={handleDeleteUser} className="text-red-700 cursor-pointer">
+          Delete Account
         </span>
 
         <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
-          Sign out
+          Sign Out
         </span>
       </div>
 
-      {updateSuccess && (
-        <p className="text-green-700 mt-5">
-          Profile updated successfully
-        </p>
-      )}
+      <button onClick={handleShowListings} className="text-green-700 mt-5">
+        Show Listings
+      </button>
 
-      {error && <p className="text-red-700 mt-5">{error}</p>}
+      {userListings.map((listing) => (
+        <div key={listing._id} className="flex justify-between border p-2 mt-2">
+          <Link to={`/listing/${listing._id}`}>{listing.name}</Link>
+
+          <div>
+            <button
+              onClick={() => handleListingDelete(listing._id)}
+              className="text-red-700"
+            >
+              Delete
+            </button>
+
+            <Link to={`/update-listing/${listing._id}`}>
+              <button className="text-green-700 ml-2">Edit</button>
+            </Link>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
