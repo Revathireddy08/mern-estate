@@ -18,7 +18,8 @@ import {
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import API from "../api"; 
+import API from "../api";
+
 export default function Profile() {
   const fileRef = useRef(null);
   const dispatch = useDispatch();
@@ -55,18 +56,14 @@ export default function Profile() {
       () => {
         setFileUploadError(true);
         setSuccessMessage("");
-        setTimeout(() => {
-          setFileUploadError(false);
-        }, 5000);
+        setTimeout(() => setFileUploadError(false), 5000);
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          setFormData({ ...formData, avatar: downloadURL });
+          setFormData((prev) => ({ ...prev, avatar: downloadURL }));
           setFileUploadError(false);
           setSuccessMessage("Image successfully uploaded!");
-          setTimeout(() => {
-            setSuccessMessage("");
-          }, 5000);
+          setTimeout(() => setSuccessMessage(""), 5000);
         });
       }
     );
@@ -79,7 +76,10 @@ export default function Profile() {
   }, [file]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.id]: e.target.value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -94,18 +94,26 @@ export default function Profile() {
       dispatch(updateUserStart());
 
       const res = await API.post(
-  `/api/user/update/${currentUser._id}`,
-  formData,
-  { withCredentials: true }
-);
+        `/api/user/update/${currentUser._id}`,
+        formData,
+        { withCredentials: true }
+      );
 
-const data = res.data;
+      const data = res.data;
+
       if (data.success === false) {
         dispatch(updateUserFailure(data.message));
         return;
       }
 
-      dispatch(updateuserSuccess(data));
+      dispatch(
+        updateuserSuccess({
+          ...currentUser,
+          ...formData,
+          avatar: formData.avatar || currentUser.avatar,
+        })
+      );
+
       setUpdateSuccess(true);
     } catch (error) {
       dispatch(updateUserFailure(error.message));
@@ -121,19 +129,19 @@ const data = res.data;
     try {
       dispatch(deleteUserStart());
 
-     const res = await API.delete(
-  `/api/user/delete/${currentUser._id}`,
-  { withCredentials: true }
-);
+      const res = await API.delete(
+        `/api/user/delete/${currentUser._id}`,
+        { withCredentials: true }
+      );
 
-const data = res.data;
+      const data = res.data;
 
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
 
-      dispatch(deleteUserSuccess(data));
+      dispatch(deleteUserSuccess(null));
       setSuccessMessage("User has been deleted successfully!");
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
@@ -145,17 +153,17 @@ const data = res.data;
       dispatch(signOutUserStart());
 
       const res = await API.get("/api/auth/signout", {
-  withCredentials: true,
-});
+        withCredentials: true,
+      });
 
-const data = res.data;
+      const data = res.data;
 
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
 
-      dispatch(deleteUserSuccess(data));
+      dispatch(deleteUserSuccess(null));
     } catch (error) {
       dispatch(deleteUserFailure(error.message));
     }
@@ -167,17 +175,22 @@ const data = res.data;
     try {
       setShowListingsError(false);
 
-      const res = await API.get(`/api/user/listings/${currentUser._id}`);
+      const res = await API.get(
+        `/api/user/listings/${currentUser._id}`,
+        { withCredentials: true }
+      );
 
-const data = res.data;
+      const data = res.data;
 
-      if (data.success === false) {
+      if (!data || data.success === false) {
+        setUserListings([]);
         setShowListingsError(true);
         return;
       }
 
-      setUserListings(data);
+      setUserListings(Array.isArray(data) ? data : []);
     } catch (error) {
+      setUserListings([]);
       setShowListingsError(true);
     }
   };
@@ -190,10 +203,11 @@ const data = res.data;
 
     try {
       const res = await API.delete(
-  `/api/listing/delete/${listingId}`
-);
+        `/api/listing/delete/${listingId}`,
+        { withCredentials: true }
+      );
 
-const data = res.data;
+      const data = res.data;
 
       if (data.success === false) {
         console.log(data.message);
@@ -205,9 +219,7 @@ const data = res.data;
       );
 
       setSuccessMessage("Listing deleted successfully!");
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 5000);
+      setTimeout(() => setSuccessMessage(""), 5000);
     } catch (error) {
       console.log(error.message);
     }
@@ -252,7 +264,7 @@ const data = res.data;
           placeholder="username"
           className="border p-3 rounded-lg"
           id="username"
-          defaultValue={currentUser.username || currentUser.name}
+          value={formData.username ?? currentUser.username}
           onChange={handleChange}
         />
 
@@ -261,7 +273,7 @@ const data = res.data;
           placeholder="email"
           className="border p-3 rounded-lg"
           id="email"
-          defaultValue={currentUser.email}
+          value={formData.email ?? currentUser.email}
           onChange={handleChange}
         />
 
@@ -298,17 +310,11 @@ const data = res.data;
       </form>
 
       <div className="flex justify-between mt-5">
-        <span
-          onClick={handleDeleteUser}
-          className="text-red-700 cursor-pointer"
-        >
+        <span onClick={handleDeleteUser} className="text-red-700 cursor-pointer">
           Delete Account
         </span>
 
-        <span
-          onClick={handleSignOut}
-          className="text-red-700 cursor-pointer"
-        >
+        <span onClick={handleSignOut} className="text-red-700 cursor-pointer">
           Sign Out
         </span>
       </div>
@@ -336,7 +342,9 @@ const data = res.data;
           </h1>
 
           {userListings.length === 0 ? (
-            <p className="text-center text-gray-500">No listings found</p>
+            <p className="text-center text-gray-500 mt-5">
+              No listings found
+            </p>
           ) : (
             userListings.map((listing) => (
               <div
@@ -364,7 +372,9 @@ const data = res.data;
                   </button>
 
                   <Link to={`/update-listing/${listing._id}`}>
-                    <button className="text-green-700 uppercase">Edit</button>
+                    <button className="text-green-700 uppercase">
+                      Edit
+                    </button>
                   </Link>
                 </div>
               </div>

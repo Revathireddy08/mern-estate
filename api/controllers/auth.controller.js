@@ -87,20 +87,16 @@ export const google = async (req, res, next) => {
     const secretKey = process.env.JWT_SECRET || "fallback_secret_key";
 
     if (!user) {
-      const generatePassword =
-        Math.random().toString(36).slice(-8) +
-        Math.random().toString(36).slice(-8);
+      const hashedPassword = bcryptjs.hashSync(
+        Math.random().toString(36).slice(-8),
+        10
+      );
 
-      const hashedPassword = bcryptjs.hashSync(generatePassword, 10);
+      // ✅ USE GOOGLE NAME DIRECTLY (NO MODIFICATION)
+      const username = name;
 
-      // ✅ FIX HERE (important)
-      const username =
-  (name || "user")
-    .replace(/\s/g, "")
-    .toLowerCase() +
-  Math.random().toString(36).slice(2, 6);
       user = new User({
-        username,   // ✅ now unique
+        username,
         email,
         password: hashedPassword,
         avatar: photo,
@@ -111,7 +107,7 @@ export const google = async (req, res, next) => {
 
     const token = jwt.sign({ id: user._id }, secretKey);
 
-    res
+    return res
       .cookie("access_token", token, {
         httpOnly: true,
         secure: true,
@@ -120,10 +116,13 @@ export const google = async (req, res, next) => {
       })
       .status(200)
       .json({
-        _id: user._id,
-        name: user.username,
-        email: user.email,
-        avatar: user.avatar,
+        success: true,
+        user: {
+          _id: user._id,
+          username: user.username,   // ✅ Google name 그대로
+          email: user.email,
+          avatar: user.avatar,
+        },
       });
 
   } catch (error) {

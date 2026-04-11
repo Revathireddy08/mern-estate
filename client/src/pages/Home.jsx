@@ -13,43 +13,32 @@ export default function Home() {
   SwiperCore.use([Navigation]);
 
   useEffect(() => {
-    const fetchOfferListings = async () => {
-      try {
-        const res = await fetch("https://mern-estate-backend-iz4a.onrender.com/api/listing/get?offer=true&limit=4")
-;
-        const data = await res.json();
-        setOfferListings(data);
-        fetchRentListings();
-      } catch (error) {
-        console.log(error);
-      }
-    };
+  const fetchListings = async () => {
+    try {
+      const offerRes = await fetch(
+        "https://mern-estate-backend-iz4a.onrender.com/api/listing/get?offer=true&limit=4"
+      );
+      const offerData = await offerRes.json();
+      setOfferListings(offerData);
 
-    const fetchRentListings = async () => {
-      try {
-        const res = await fetch("https://mern-estate-backend-iz4a.onrender.com/api/listing/get?type=rent&limit=4")
-;
-        const data = await res.json();
-        setRentListings(data);
-        fetchSaleListings();
-      } catch (error) {
-        console.log(error);
-      }
-    };
+      const rentRes = await fetch(
+        "https://mern-estate-backend-iz4a.onrender.com/api/listing/get?type=rent&limit=4"
+      );
+      const rentData = await rentRes.json();
+      setRentListings(rentData);
 
-    const fetchSaleListings = async () => {
-      try {
-        const res = await fetch("https://mern-estate-backend-iz4a.onrender.com/api/listing/get?type=sale&limit=4")
-;
-        const data = await res.json();
-        setSaleListings(data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchOfferListings();
-  }, []);
+      const saleRes = await fetch(
+        "https://mern-estate-backend-iz4a.onrender.com/api/listing/get?type=sale&limit=4"
+      );
+      const saleData = await saleRes.json();
+      setSaleListings(saleData);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
+  fetchListings();
+}, []);
   return (
     <div>
       {/* top side */}

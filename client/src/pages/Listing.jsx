@@ -33,8 +33,9 @@ export default function Listing() {
     const fetchListing = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://mern-estate-backend-iz4a.onrender.com/api/listing/get/${params.listingId}");
-        const data = await res.json();
+const res = await fetch(
+  `https://mern-estate-backend-iz4a.onrender.com/api/listing/get/${params.listingId}`
+);        const data = await res.json();
         if (data.success === false) {
           setError(true);
           setLoading(false);

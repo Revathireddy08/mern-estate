@@ -11,7 +11,7 @@ export default function SignIn() {
   const {loading, error} = useSelector((state) => state.user)
   const navigate = useNavigate();
 
-  const dispactch = useDispatch()
+const dispatch = useDispatch();
 const [showPassword, setShowPassword] = useState(false);
   const handleChange = (e) => {
     setFormData({
@@ -21,38 +21,43 @@ const [showPassword, setShowPassword] = useState(false);
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log(formData);
-    try {
-      dispactch(signInStart());
-      const res = await fetch(
-  "https://mern-estate-backend-iz4a.onrender.com/api/auth/signin",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(formData),
-    credentials: "include",   // ✅ ADD THIS
-  }
-);
+  e.preventDefault();
 
-let data;
+  try {
+    dispatch(signInStart());
 
-try {
-  data = await res.json();
-} catch (err) {
-  dispatch(signInFailure("Server error"));
-  return;
-}      if (data.success === false) {
-        dispactch(signInFailure(data.message))
-        return;
+    const res = await fetch(
+      "https://mern-estate-backend-iz4a.onrender.com/api/auth/signin",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+        credentials: "include",
       }
-      dispactch(signInSuccess(data))
-      navigate('/')
-    } catch (error) {
-      dispactch(signInFailure(error.message))
-    }
-  };
+    );
 
+    const text = await res.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      console.log("Server returned non-JSON:", text);
+      dispatch(signInFailure("Server error"));
+      return;
+    }
+
+    if (!res.ok) {
+      dispatch(signInFailure(data.message || "Signin failed"));
+      return;
+    }
+
+    dispatch(signInSuccess(data));
+    navigate("/");
+  } catch (error) {
+    dispatch(signInFailure(error.message));
+  }
+};
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl text-center font-semibold my-7">Sign In</h1>

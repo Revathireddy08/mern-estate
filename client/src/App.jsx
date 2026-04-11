@@ -1,3 +1,10 @@
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import {
+  signInSuccess,
+  setInitialLoading,
+} from "./redux/user/userSlice";
+
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
@@ -12,9 +19,38 @@ import Listing from "./pages/Listing";
 import Search from "./pages/Search";
 
 export default function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const res = await fetch(
+          "https://mern-estate-backend-iz4a.onrender.com/api/auth/me",
+          {
+            credentials: "include",
+          }
+        );
+
+        const data = await res.json();
+
+        if (data.success) {
+          dispatch(signInSuccess(data.user));
+        }
+      } catch (err) {
+        console.log("Auth check failed:", err);
+      } finally {
+        // ✅ IMPORTANT: always stop loading
+        dispatch(setInitialLoading(false));
+      }
+    };
+
+    getUser();
+  }, [dispatch]);
+
   return (
     <BrowserRouter>
       <Header />
+
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/sign-up" element={<SignUp />} />
@@ -22,6 +58,8 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/listing/:listingId" element={<Listing />} />
         <Route path="/search" element={<Search />} />
+
+        {/* Protected Routes */}
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/create-listing" element={<CreateListing />} />

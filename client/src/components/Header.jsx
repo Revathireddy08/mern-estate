@@ -59,19 +59,22 @@ useEffect(() => {
               About
             </li>
           </Link>
-          <Link to={"/profile"}>
-            {currentUser ? (
-              <img
-onError={(e) => {
-  e.target.src = "default-avatar.png";
-}}                className="h-7 w-7 rounded-full object-cover"
-              />
-            ) : (
-              <li className="sm:inline text-slate-700 hover:underline">
-                Sign in
-              </li>
-            )}
-          </Link>
+         <Link to={"/profile"}>
+  {currentUser ? (
+    <img
+      src={currentUser.avatar || "default-avatar.png"}
+      alt="profile"
+      onError={(e) => {
+        e.target.src = "default-avatar.png";
+      }}
+      className="h-7 w-7 rounded-full object-cover"
+    />
+  ) : (
+    <li className="sm:inline text-slate-700 hover:underline">
+      Sign in
+    </li>
+  )}
+</Link>
         </ul>
       </div>
     </header>
