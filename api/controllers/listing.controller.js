@@ -1,15 +1,23 @@
 import Listing from "../models/listing.model.js";
 import { errorHandler } from "../utils/error.js";
 
+// ---------------- CREATE ----------------
 export const createListing = async (req, res, next) => {
   try {
-    const listing = await Listing.create(req.body);
-    return res.status(201).json(listing);
+    const newListing = new Listing({
+      ...req.body,
+      userRef: req.user.id,
+    });
+
+    const savedListing = await newListing.save();
+
+    return res.status(201).json(savedListing);
   } catch (error) {
     next(error);
   }
 };
 
+// ---------------- DELETE ----------------
 export const deleteListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
 
@@ -29,6 +37,7 @@ export const deleteListing = async (req, res, next) => {
   }
 };
 
+// ---------------- UPDATE ----------------
 export const updateListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
 
@@ -46,12 +55,14 @@ export const updateListing = async (req, res, next) => {
       req.body,
       { new: true }
     );
+
     res.status(200).json(updatedListing);
   } catch (error) {
     next(error);
   }
 };
 
+// ---------------- GET ONE ----------------
 export const getListing = async (req, res, next) => {
   try {
     const listing = await Listing.findById(req.params.id);
@@ -66,6 +77,7 @@ export const getListing = async (req, res, next) => {
   }
 };
 
+// ---------------- GET ALL (SEARCH) ----------------
 export const getListings = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 9;
@@ -116,7 +128,6 @@ export const getListings = async (req, res, next) => {
         maxPrice = parseInt(words[index + 1]);
       }
 
-      // ✅ FIXED (safe bhk parsing)
       if (word.includes("bhk")) {
         const num = parseInt(word);
         if (!isNaN(num)) {
@@ -124,17 +135,9 @@ export const getListings = async (req, res, next) => {
         }
       }
 
-      if (word === "furnished") {
-        furnishedFilter = true;
-      }
-
-      if (word === "parking") {
-        parkingFilter = true;
-      }
-
-      if (word === "offer") {
-        offerFilter = true;
-      }
+      if (word === "furnished") furnishedFilter = true;
+      if (word === "parking") parkingFilter = true;
+      if (word === "offer") offerFilter = true;
 
       if (
         !["under", "bhk", "furnished", "parking", "offer", "rent", "sale"].includes(word) &&

@@ -23,10 +23,16 @@ export const signup = async (req, res, next) => {
     const newUser = new User({ username, email, password: hashedPassword });
 
     await newUser.save();
-res.status(201).json({
-  success: true,
-  message: "User created successfully"
-});  } catch (error) {
+
+    // 🔥 FIX: return user like signin
+    const { password: pass, ...rest } = newUser._doc;
+
+    res.status(201).json({
+      success: true,
+      user: rest,
+    });
+
+  } catch (error) {
     console.error("Error during signup:", error);
     next(error);
   }
@@ -39,17 +45,18 @@ export const signin = async (req, res, next) => {
 
   try {
     const validUser = await User.findOne({ email });
-    if (!validUser) return res.status(404).json({
-  success: false,
-  message: "User not found"
-});
+    if (!validUser)
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
 
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword)
       return res.status(401).json({
-  success: false,
-  message: "Invalid user credentials"
-});
+        success: false,
+        message: "Invalid user credentials",
+      });
 
     const secretKey = process.env.JWT_SECRET || "fallback_secret_key";
 
@@ -65,18 +72,17 @@ export const signin = async (req, res, next) => {
         path: "/",
       })
       .status(200)
-.json({
-  success: true,
-  user: rest
-});  } catch (error) {
+      .json({
+        success: true,
+        user: rest,
+      });
+
+  } catch (error) {
     console.error("Signin error:", error);
     next(error);
   }
 };
 
-
-
-// GOOGLE OAUTH
 // GOOGLE OAUTH
 export const google = async (req, res, next) => {
   try {
@@ -92,11 +98,8 @@ export const google = async (req, res, next) => {
         10
       );
 
-      // ✅ USE GOOGLE NAME DIRECTLY (NO MODIFICATION)
-      const username = name;
-
       user = new User({
-        username,
+        username: name,
         email,
         password: hashedPassword,
         avatar: photo,
@@ -106,6 +109,8 @@ export const google = async (req, res, next) => {
     }
 
     const token = jwt.sign({ id: user._id }, secretKey);
+
+    const { password, ...rest } = user._doc;
 
     return res
       .cookie("access_token", token, {
@@ -117,12 +122,7 @@ export const google = async (req, res, next) => {
       .status(200)
       .json({
         success: true,
-        user: {
-          _id: user._id,
-          username: user.username,   // ✅ Google name 그대로
-          email: user.email,
-          avatar: user.avatar,
-        },
+        user: rest,
       });
 
   } catch (error) {
@@ -130,6 +130,7 @@ export const google = async (req, res, next) => {
     next(errorHandler(500, "Google authentication failed"));
   }
 };
+
 // SIGNOUT
 export const signout = async (req, res, next) => {
   try {
@@ -139,7 +140,11 @@ export const signout = async (req, res, next) => {
       sameSite: "none",
       path: "/",
     });
-    res.status(200).json({ message: "User signed out successfully" });
+
+    res.status(200).json({
+      success: true,
+      message: "User signed out successfully",
+    });
   } catch (error) {
     next(error);
   }

@@ -20,9 +20,7 @@ export default function OAuth() {
       await signOut(auth);
 
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        prompt: "select_account",
-      });
+      provider.setCustomParameters({ prompt: "select_account" });
 
       const result = await signInWithPopup(auth, provider);
 
@@ -30,9 +28,7 @@ export default function OAuth() {
         "https://mern-estate-backend-iz4a.onrender.com/api/auth/google",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: result.user.displayName,
             email: result.user.email,
@@ -44,20 +40,14 @@ export default function OAuth() {
 
       const data = await res.json();
 
-      console.log("Backend response:", data);
+      if (!data?.user) return;
 
-      dispatch(
-        signInSuccess({
-          _id: data.user._id,
-          username: data.user.username,
-          email: data.user.email,
-          avatar: data.user.avatar,
-        })
-      );
-
+      // 🔥 FIX
+      dispatch(signInSuccess(data.user));
+localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/");
     } catch (error) {
-      console.log("Could not sign in with Google", error);
+      console.log(error);
     }
   };
 
@@ -65,7 +55,7 @@ export default function OAuth() {
     <button
       onClick={handleGoogleClick}
       type="button"
-      className="bg-red-700 text-white p-3 rounded-lg uppercase hover:opacity-50"
+      className="bg-red-700 text-white p-3 rounded-lg uppercase"
     >
       Continue with Google
     </button>

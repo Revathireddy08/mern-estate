@@ -1,11 +1,9 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import {
-  signInSuccess,
-  setInitialLoading,
-} from "./redux/user/userSlice";
+import { signInSuccess, setInitialLoading } from "./redux/user/userSlice";
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Home from "./pages/Home";
 import SignUp from "./pages/SignUp";
 import About from "./pages/About";
@@ -33,13 +31,18 @@ export default function App() {
 
         const data = await res.json();
 
-        if (data.success) {
+        if (data?.success && data?.user) {
           dispatch(signInSuccess(data.user));
+
+          // 🔥 FIX: keep sync with refresh
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } else {
+          localStorage.removeItem("user");
         }
       } catch (err) {
         console.log("Auth check failed:", err);
+        localStorage.removeItem("user");
       } finally {
-        // ✅ IMPORTANT: always stop loading
         dispatch(setInitialLoading(false));
       }
     };
@@ -63,7 +66,10 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
           <Route path="/create-listing" element={<CreateListing />} />
-          <Route path="/update-listing/:listingId" element={<UpdateListing />} />
+          <Route
+            path="/update-listing/:listingId"
+            element={<UpdateListing />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>
